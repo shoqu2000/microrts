@@ -2,6 +2,7 @@ package tests;
 
 import ai.core.AI;
 import ai.*;
+import ai.strategytactics.*;
 import ai.evaluation.SimpleSqrtEvaluationFunction3;
 import gui.PhysicalGameStatePanel;
 import javax.swing.JFrame;
@@ -29,7 +30,9 @@ public class GameVisualSimulationTest {
         // Set AIs playing the game
 //        AI ai1 = new BotExercise5(TIME_BUDGET, -1, utt, new BFSPathFinding());  //new WorkerRush(utt, new BFSPathFinding());
 
-        AI ai1 = new RandomBiasedAI();
+//        AI ai1 = new RandomBiasedAI();
+
+        AI ai1 = new StrategyTactics(utt);
         AI ai2 = new mc.MonteCarlo(100, -1, 100, 1000,
                 new RandomAI(), new SimpleSqrtEvaluationFunction3());
 

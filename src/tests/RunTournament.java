@@ -3,8 +3,10 @@ package tests;
 import ai.RandomBiasedAI;
 import ai.abstraction.LightRush;
 import ai.abstraction.WorkerRush;
+import ai.strategytactics.*;
+import ai.RandomAI;
 import ai.core.AI;
-import ai.evaluation.SimpleEvaluationFunction;
+import ai.evaluation.SimpleSqrtEvaluationFunction3;
 import ai.mcts.naivemcts.NaiveMCTS;
 import ai.mcts.uct.UCT;
 import rts.units.UnitTypeTable;
@@ -44,6 +46,9 @@ public class RunTournament {
         UnitTypeTable utt = new UnitTypeTable(UnitTypeTable.VERSION_ORIGINAL, UnitTypeTable.MOVE_CONFLICT_RESOLUTION_CANCEL_BOTH);
         AIs.add(new LightRush(utt));
         AIs.add(new WorkerRush(utt));
+        AIs.add(new StrategyTactics(utt));
+        AIs.add(new mc.MonteCarlo(100, -1, 100, 1000,
+                new RandomAI(), new SimpleSqrtEvaluationFunction3()));
 
         // Create list of maps for tournament
         List<String> maps = new ArrayList<>();
