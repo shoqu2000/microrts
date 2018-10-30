@@ -9,6 +9,8 @@ import ai.abstraction.pathfinding.BFSPathFinding;
 import ai.core.AI;
 import ai.*;
 import ai.evaluation.SimpleEvaluationFunction;
+import ai.mcts.naivemcts.NaiveMCTS;
+import ai.puppet.PuppetNoPlan;
 import ai.puppet.PuppetSearchAB;
 import ai.puppet.SingleChoiceConfigurableScript;
 import exercise5.*;
@@ -36,7 +38,7 @@ public class GameVisualSimulationTest {
 
         GameState gs = new GameState(pgs, utt);
         int MAXCYCLES = 5000;  // Maximum length of the game
-        int TIME_BUDGET = 100;  // Time budget for AIs
+        int TIME_BUDGET = 20;  // Time budget for AIs
         boolean gameover = false;
 
         // Set AIs playing the gam
@@ -44,17 +46,31 @@ public class GameVisualSimulationTest {
         //AI ai1 = new BotExercise5(TIME_BUDGET, -1, utt, new BFSPathFinding());  //new WorkerRush(utt, new BFSPathFinding());
 
         AI ai1 = new LightRush(utt);
-        AI ai2 = new PuppetSearchAB(
-                100, -1, -1, -1, 100,
-                new SingleChoiceConfigurableScript(new AStarPathFinding(),
-                        new AI[]{
-                                new WorkerRush(utt, new AStarPathFinding()),
-                                new LightRush(utt, new AStarPathFinding()),
-                                new RangedRush(utt, new AStarPathFinding()),
-                                new HeavyRush(utt, new AStarPathFinding())
-                        }),
-                new SimpleEvaluationFunction());
-
+        //AI ai2 = new PuppetSearchAB(
+        //        100, -1, -1, -1, 100,
+        //        new SingleChoiceConfigurableScript(new AStarPathFinding(),
+        //                new AI[]{
+        //                        new WorkerRush(utt, new AStarPathFinding()),
+        //                        new LightRush(utt, new AStarPathFinding()),
+        //                        new RangedRush(utt, new AStarPathFinding()),
+        //                        new HeavyRush(utt, new AStarPathFinding())
+        //                }),
+        //        new SimpleEvaluationFunction());
+        AI ai2 = new StrategyTactics(100, -1, false, 60, 40,
+                new PuppetNoPlan(new PuppetSearchAB(
+                        100, -1, -1, -1, 100,
+                        new SingleChoiceConfigurableScript(new AStarPathFinding(),
+                                new AI[]{
+                                        new WorkerRush(utt, new AStarPathFinding()),
+                                        new LightRush(utt, new AStarPathFinding()),
+                                        new RangedRush(utt, new AStarPathFinding()),
+                                        new HeavyRush(utt, new AStarPathFinding())
+                                }),
+                        new SimpleEvaluationFunction())
+                ),
+                new NaiveMCTS(100, -1, 100, 10, 0.3f, 0.0f, 0.4f,
+                        new RandomBiasedAI(utt),
+                        new SimpleEvaluationFunction(), true));
 
 //        AI ai1 = new exercise8.MonteCarlo(100, -1, 10, 1000,
 //                new RandomBiasedAI(), new SimpleSqrtEvaluationFunction3(), utt);

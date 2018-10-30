@@ -41,8 +41,8 @@ public class ReducedGameState extends GameState{
         for(Unit u:pgs.getUnits()) {
             if (u.getPlayer() >=0 && u.getPlayer() != player) {
                 double d = Math.sqrt((u.getX()-x)*(u.getX()-x) + (u.getY()-y)*(u.getY()-y));
-                //if (d<=u.getType().sightRadius+1) return true;
-                if(d<=1) return true;
+                if (d<=u.getType().sightRadius+1) return true;
+                //if(d<=1) return true;
             }
         }
 

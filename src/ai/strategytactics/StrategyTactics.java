@@ -1,24 +1,29 @@
+
 package ai.strategytactics;
-// commit some change
+
 import java.util.ArrayList;
 import java.util.List;
 
 import ai.RandomBiasedAI;
-import ai.abstraction.*;
+import ai.abstraction.HeavyRush;
+import ai.abstraction.LightRush;
+import ai.abstraction.RangedRush;
+import ai.abstraction.WorkerRush;
 import ai.abstraction.partialobservability.POHeavyRush;
 import ai.abstraction.partialobservability.POLightRush;
 import ai.abstraction.partialobservability.PORangedRush;
 import ai.abstraction.partialobservability.POWorkerRush;
-import ai.abstraction.pathfinding.AStarPathFinding;
 import ai.abstraction.pathfinding.FloodFillPathFinding;
-import ai.abstraction.pathfinding.GreedyPathFinding;
 import ai.core.AI;
 import ai.core.AIWithComputationBudget;
 import ai.core.InterruptibleAI;
 import ai.core.ParameterSpecification;
 import ai.evaluation.SimpleEvaluationFunction;
+import ai.evaluation.SimpleSqrtEvaluationFunction3;
 import ai.mcts.naivemcts.NaiveMCTS;
-import ai.puppet.*;
+import ai.puppet.PuppetNoPlan;
+import ai.puppet.PuppetSearchAB;
+import ai.puppet.SingleChoiceConfigurableScript;
 import rts.GameState;
 import rts.PhysicalGameState;
 import rts.PlayerAction;
@@ -32,52 +37,40 @@ public class StrategyTactics extends AIWithComputationBudget implements Interrup
 
     PuppetNoPlan strategyAI;
     NaiveMCTS tacticsAI;
-    protected int DEBUG=1;
+    protected int DEBUG=0;
+    boolean flexibleBudget;
     int weightStrategy,weightTactics;
     int origTimeBudget,origItBudget;
 
     public StrategyTactics(UnitTypeTable utt)throws Exception{
-        this(100,-1,70,30,
-               // new PuppetNoPlan(
-               //         new PuppetSearchAB(
-               //                 100, -1,
-               //                 100, -1,
-               //                 100,
-               //                 new SingleChoiceConfigurableScript(new AStarPathFinding(),
-               //                         new AI[]{
-               //                                 new WorkerRush(utt, new AStarPathFinding()),
-               //                                 //new WorkerRush(utt, new GreedyPathFinding()),
-               //                                 //new WorkerRush(utt, new GreedyPathFinding()),
-               //                                 //new WorkerRush(utt, new GreedyPathFinding()),
-               //                                 new LightRush(utt, new AStarPathFinding()),
-               //                                 //new WorkerDefense(utt, new GreedyPathFinding()),
-               //                                 //new LightDefense(utt, new GreedyPathFinding()),
-               //                                 new RangedRush(utt, new AStarPathFinding()),
-               //                                 new HeavyRush(utt, new AStarPathFinding()),
-               //                         }),
-               //                 new SimpleEvaluationFunction())
-               // )
+        this(100,-1,false, 20,80,
                 new PuppetNoPlan(
-                        new PuppetSearchMCTS(100, -1,
-                                5000, -1,
-                                100, 100,
-                                new RandomBiasedAI(),
-                                new BasicConfigurableScript(utt, new AStarPathFinding()),
+                        new PuppetSearchAB(
+                                100, -1,
+                                -1, -1,
+                                100,
+                                new SingleChoiceConfigurableScript(new FloodFillPathFinding(),
+                                        new AI[]{
+                                                new WorkerRush(utt, new FloodFillPathFinding()),
+                                                new LightRush(utt, new FloodFillPathFinding()),
+                                                new RangedRush(utt, new FloodFillPathFinding()),
+                                                new HeavyRush(utt, new FloodFillPathFinding()),
+                                        }),
                                 new SimpleEvaluationFunction())
                 )
-                ,new NaiveMCTS(100,-1,150,5,
+                ,new NaiveMCTS(100,-1,100,10,
                         0.3f, 0.0f, 0.4f,
-                        //new RandomBiasedAI(),
-                        new WorkerRush(utt),
+                        new RandomBiasedAI(),
                         new SimpleEvaluationFunction(), true));
     }
 
-    public StrategyTactics(int mt, int mi, int weightStrategy, int weightTactics, PuppetNoPlan strategyAI, NaiveMCTS tacticsAI) throws Exception{
+    public StrategyTactics(int mt, int mi,boolean flexibleBudget, int weightStrategy, int weightTactics, PuppetNoPlan strategyAI, NaiveMCTS tacticsAI) throws Exception{
         super(mt, mi);
         origTimeBudget=mt;
         origItBudget=mi;
         this.strategyAI=strategyAI;
         this.tacticsAI=tacticsAI;
+        this.flexibleBudget = flexibleBudget;
 //		this.strategyAI=new ContinuingAI(strategyAI);
 //		this.tacticsAI=new ContinuingAI(tacticsAI);
         this.weightStrategy=weightStrategy;
@@ -89,7 +82,6 @@ public class StrategyTactics extends AIWithComputationBudget implements Interrup
     public void reset() {
         strategyAI.reset();
         tacticsAI.reset();
-        //return 0;
     }
 
     @Override
@@ -108,9 +100,10 @@ public class StrategyTactics extends AIWithComputationBudget implements Interrup
     @Override
     public AI clone() {
         try{
-            return (AI) new StrategyTactics(
+            return (AI)new StrategyTactics(
                     origTimeBudget,
                     origItBudget,
+                    flexibleBudget,
                     weightStrategy,
                     weightTactics,
                     (PuppetNoPlan)strategyAI.clone(),
@@ -143,7 +136,6 @@ public class StrategyTactics extends AIWithComputationBudget implements Interrup
     }
     //ReducedGameState _rgs;
     GameState _gs;
-
     @Override
     public void startNewComputation(int player, GameState gs) throws Exception {
         if(DEBUG>=2)System.out.println("start");
@@ -156,24 +148,39 @@ public class StrategyTactics extends AIWithComputationBudget implements Interrup
         for(Unit u:rgs.getUnits()){
             if(u.getPlayer()==0)p0=true;
             if(u.getPlayer()==1)p1=true;
-            if(p0&&p1)break;
+            if(p0&&p1) break;
         }
-        //int timeLeft = (int) (System.currentTimeMillis() - startTime);
-        //System.out.println("This is time for rgs:   " + timeLeft);
-        //System.out.println(System.currentTimeMillis());
-        //int timeBefore = (int) (System.currentTimeMillis());
+
+        int reducedUnits = 0;
+        int totalUnits = 0;
+
+        for(Unit u:rgs.getUnits()){
+            if (u.getPlayer() != -1){
+                reducedUnits = reducedUnits + 1;
+            }
+        }
+
+        for (Unit u: _gs.getUnits()){
+            if (u.getPlayer() != -1)
+                totalUnits = totalUnits + 1;
+        }
+
         if(!(p0&&p1) || !rgs.canExecuteAnyAction(player)){
             if(DEBUG>=1)System.out.println("Strategy only");
             strategyAI.setTimeBudget(TIME_BUDGET);
             strategyAI.startNewComputation(player, _gs);
             tacticsAI.setTimeBudget(0);
         }else{
-            strategyAI.setTimeBudget(TIME_BUDGET*weightStrategy/(weightStrategy+weightTactics));
+            int strategyBuget = TIME_BUDGET*weightStrategy/(weightStrategy+weightTactics);
+            int tacticsBudget =  TIME_BUDGET*weightTactics/(weightStrategy+weightTactics);
+            if (flexibleBudget) {
+                strategyBuget = TIME_BUDGET * reducedUnits / totalUnits;
+                tacticsBudget = TIME_BUDGET - strategyBuget;
+            }
+            strategyAI.setTimeBudget(strategyBuget);
             strategyAI.startNewComputation(player, _gs);
 
-
-
-            tacticsAI.setTimeBudget(TIME_BUDGET*weightTactics/(weightStrategy+weightTactics));
+            tacticsAI.setTimeBudget(tacticsBudget);
             tacticsAI.startNewComputation(player, rgs);
 
             //assert(_gs.getTime()==rgs.getTime());
@@ -196,7 +203,6 @@ public class StrategyTactics extends AIWithComputationBudget implements Interrup
     public PlayerAction getBestActionSoFar() throws Exception {
         if(DEBUG>=2)System.out.println("get");
         if(tacticsAI.getTimeBudget()<=0){
-
             PlayerAction paStrategy=strategyAI.getBestActionSoFar();
             return paStrategy;
         }else{
