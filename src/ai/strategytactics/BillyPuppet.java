@@ -133,7 +133,7 @@ public class BillyPuppet extends AIWithComputationBudget implements Interruptibl
                 tacticsBudget = TIME_BUDGET - strategyBuget;
             }
 
-            System.out.println("Strategy Ratio: " + strategyBuget + "  Tactic Ratio: " + tacticsBudget);
+            //System.out.println("Strategy Ratio: " + strategyBuget + "  Tactic Ratio: " + tacticsBudget);
             strategy.setTimeBudget( strategyBuget);
             strategy.startNewComputation(player, _gs);
             tactic.setTimeBudget(tacticsBudget);
@@ -195,11 +195,11 @@ public class BillyPuppet extends AIWithComputationBudget implements Interruptibl
                     mergedAction.addUnitAction(actionPair.m_a, actionPair.m_b);
                     mergedAction.getResourceUsage().merge(ru);
                     unitsForTactic.add(actionPair.m_a);
-                    System.out.println("Military Unit: " + actionPair.m_a);
+                    //System.out.println("Military Unit: " + actionPair.m_a);
                 }
                 else
                 {
-                    System.out.println("Inconsistent");
+                    //System.out.println("Inconsistent");
                 }
 
             }
@@ -219,7 +219,7 @@ public class BillyPuppet extends AIWithComputationBudget implements Interruptibl
 
             }
         }
-        System.out.println("merged Action:" + mergedAction);
+        //System.out.println("merged Action:" + mergedAction);
         return mergedAction;
     }
 }
