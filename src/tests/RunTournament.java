@@ -57,7 +57,7 @@ public class RunTournament {
         AIs.add(new NaiveMCTS(timeBudget, -1, 100, 10, 0.3f, 0.0f, 0.4f,
                 new RandomBiasedAI(utt),
                 new SimpleEvaluationFunction(), true));
-        AIs.add(new PuppetSearchAB(
+        AIs.add(new PuppetNoPlan(new PuppetSearchAB(
                 timeBudget, -1, -1, -1, 100,
                 new SingleChoiceConfigurableScript(new AStarPathFinding(),
                         new AI[]{
@@ -66,7 +66,7 @@ public class RunTournament {
                                 new RangedRush(utt, new AStarPathFinding()),
                                 new HeavyRush(utt, new AStarPathFinding())
                         }),
-                new SimpleEvaluationFunction()));
+                new SimpleEvaluationFunction())));
 
         //************************************************
         // CHANGE THE FOLLOWING PARAMETERS FOR TESTING !!!
