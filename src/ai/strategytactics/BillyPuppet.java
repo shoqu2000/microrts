@@ -1,9 +1,7 @@
 package ai.strategytactics;
 
-import ai.abstraction.HeavyRush;
-import ai.abstraction.LightRush;
-import ai.abstraction.RangedRush;
-import ai.abstraction.WorkerRush;
+import ai.RandomBiasedAI;
+import ai.abstraction.*;
 import ai.abstraction.pathfinding.AStarPathFinding;
 import ai.core.AI;
 import ai.core.AIWithComputationBudget;
@@ -11,9 +9,7 @@ import ai.core.InterruptibleAI;
 import ai.core.ParameterSpecification;
 import ai.evaluation.SimpleEvaluationFunction;
 import ai.mcts.naivemcts.NaiveMCTS;
-import ai.puppet.PuppetNoPlan;
-import ai.puppet.PuppetSearchAB;
-import ai.puppet.SingleChoiceConfigurableScript;
+import ai.puppet.*;
 import rts.*;
 import rts.units.Unit;
 import rts.units.UnitTypeTable;
@@ -21,6 +17,7 @@ import util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
 
 public class BillyPuppet extends AIWithComputationBudget implements InterruptibleAI {
 
@@ -30,12 +27,13 @@ public class BillyPuppet extends AIWithComputationBudget implements Interruptibl
     int weightStrategy, weightTactic;
     int timeBudgetCopy, iterationBudgetCopy;
     GameState _gs;
+    boolean useProportionalBudget;
 
     public BillyPuppet(UnitTypeTable utt) {
         this(
-                100, -1, 80, 20,
+                100, -1, true, 80, 20,
                 new PuppetNoPlan(new PuppetSearchAB(
-                        100, -1, 100, -1, 100,
+                        100, -1, 100, -1, 150,
                         new SingleChoiceConfigurableScript(new AStarPathFinding(),
                                 new AI[]{
                                         new WorkerRush(utt, new AStarPathFinding()),
@@ -50,9 +48,10 @@ public class BillyPuppet extends AIWithComputationBudget implements Interruptibl
                         new SimpleEvaluationFunction(), true));
     }
 
-    public BillyPuppet(int timeBudget, int iterationsBudget, int weightStrategy, int weightTactic, PuppetNoPlan strategy, NaiveMCTS tactics) {
+    public BillyPuppet(int timeBudget, int iterationsBudget, boolean useProportionalBudget, int weightStrategy, int weightTactic, PuppetNoPlan strategy, NaiveMCTS tactics) {
         super(timeBudget, iterationsBudget);
         this.timeBudgetCopy = timeBudget;
+        this.useProportionalBudget = useProportionalBudget;
         this.iterationBudgetCopy = iterationsBudget;
         this.weightStrategy = weightStrategy;
         this.weightTactic = weightTactic;
@@ -85,6 +84,7 @@ public class BillyPuppet extends AIWithComputationBudget implements Interruptibl
             return new BillyPuppet(
                     this.timeBudgetCopy,
                     this.iterationBudgetCopy,
+                    this.useProportionalBudget,
                     this.weightStrategy,
                     this.weightTactic,
                     this.strategy, this.tactic);
@@ -101,18 +101,22 @@ public class BillyPuppet extends AIWithComputationBudget implements Interruptibl
 
         GameState rgs = new ReducedGameState(_gs);
 
-        assert(_gs.getTime()==rgs.getTime());
-
         boolean haveOpponents = false;
+        int reducedUnits = 0;
+        int totalUnits = 0;
 
 
         for (Unit unitsInReducedGS: rgs.getUnits()){
             if (unitsInReducedGS.getPlayer() == 0 || unitsInReducedGS.getPlayer() ==1 )
             {haveOpponents = true;}
-            System.out.println("This unit is in RGS: " + unitsInReducedGS);
+            if (unitsInReducedGS.getPlayer() != -1){
+                reducedUnits = reducedUnits + 1;
+            }
         }
-        System.out.println("========================");
-
+        for (Unit unitsInGS: _gs.getUnits()){
+            if (unitsInGS.getPlayer() != -1)
+                totalUnits = totalUnits + 1;
+        }
 
         if (!haveOpponents || !rgs.canExecuteAnyAction(player)) {
             strategy.setTimeBudget(TIME_BUDGET);
@@ -120,10 +124,19 @@ public class BillyPuppet extends AIWithComputationBudget implements Interruptibl
             tactic.setTimeBudget(0);
         }
         else{
-            //TODO The time Budget adjust
-            strategy.setTimeBudget(TIME_BUDGET*weightStrategy/(weightStrategy+weightTactic));
+            //float strategyRatio = (float) weightStrategy/(float)(weightStrategy+weightTactic);
+            //float tacticsRatio = (float) weightTactic/(float)(weightStrategy+weightTactic);
+            int strategyBuget = TIME_BUDGET*weightStrategy/(weightStrategy+weightTactic);
+            int tacticsBudget =  TIME_BUDGET*weightTactic/(weightStrategy+weightTactic);
+            if (useProportionalBudget) {
+                strategyBuget = TIME_BUDGET * reducedUnits/totalUnits;
+                tacticsBudget = TIME_BUDGET - strategyBuget;
+            }
+
+            System.out.println("Strategy Ratio: " + strategyBuget + "  Tactic Ratio: " + tacticsBudget);
+            strategy.setTimeBudget( strategyBuget);
             strategy.startNewComputation(player, _gs);
-            tactic.setTimeBudget(TIME_BUDGET*weightTactic/(weightTactic+weightStrategy));
+            tactic.setTimeBudget(tacticsBudget);
             tactic.startNewComputation(player, rgs);
         }
 
@@ -162,8 +175,21 @@ public class BillyPuppet extends AIWithComputationBudget implements Interruptibl
                         break;
                     }
                 }
-                List<Pair<Unit, UnitAction>> nonMilitaryUnit = new ArrayList<Pair<Unit, UnitAction>>();
+                List<Pair<Unit, UnitAction>> nonAttackActions = new ArrayList<Pair<Unit, UnitAction>>();
+                for (Pair<Unit, UnitAction> ua : tacticAction.getActions())
+                {
+                    if (!ua.m_a.getType().canAttack ||
+                    ua.m_b.getType() == UnitAction.TYPE_HARVEST ||
+                    ua.m_b.getType() == UnitAction.TYPE_RETURN ||
+                    ua.m_b.getType() == UnitAction.TYPE_PRODUCE){
+                        nonAttackActions.add(ua);
+                    }
+                }
 
+                for (Pair<Unit, UnitAction> ua : nonAttackActions)
+                {
+                    tacticAction.getActions().remove(ua);
+                }
 
                 if (!targetOccupied && ru.consistentWith(strategyAction.getResourceUsage(), _gs)) {
                     mergedAction.addUnitAction(actionPair.m_a, actionPair.m_b);
@@ -196,4 +222,35 @@ public class BillyPuppet extends AIWithComputationBudget implements Interruptibl
         System.out.println("merged Action:" + mergedAction);
         return mergedAction;
     }
+
+    public AI preGameAnalysis(UnitTypeTable utt){
+        int aiChoice = 0;
+        AI aiWillbeUsed = null;
+
+        if (aiChoice == 0) {
+            aiWillbeUsed = new PuppetNoPlan(new PuppetSearchAB(
+                    100, -1, 100, -1, 100,
+                    new SingleChoiceConfigurableScript(new AStarPathFinding(),
+                            new AI[]{
+                                    new WorkerRush(utt, new AStarPathFinding()),
+                                    new LightRush(utt, new AStarPathFinding()),
+                                    new RangedRush(utt, new AStarPathFinding()),
+                                    new HeavyRush(utt, new AStarPathFinding())
+                            }), new SimpleEvaluationFunction()));
+        }
+        else
+        {
+            aiWillbeUsed = new PuppetNoPlan(
+                    new PuppetSearchMCTS(100, -1,
+                            5000, -1,
+                            100, 100,
+                            new RandomBiasedAI(),
+                            new BasicConfigurableScript(utt, new AStarPathFinding()),
+                            new SimpleEvaluationFunction()));
+        }
+
+
+        return aiWillbeUsed;
+    }
+
 }

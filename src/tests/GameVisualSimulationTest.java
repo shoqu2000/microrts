@@ -24,10 +24,10 @@ public class GameVisualSimulationTest {
     public static void main(String args[]) throws Exception {
         UnitTypeTable utt = new UnitTypeTable();
 
-//        PhysicalGameState pgs = PhysicalGameState.load("maps/16x16/basesWorkers16x16.xml", utt);  // Set map
+        //PhysicalGameState pgs = PhysicalGameState.load("maps/16x16/basesWorkers16x16.xml", utt);  // Set map
 //        PhysicalGameState pgs = MapGenerator.basesWorkers8x8Obstacle();
 
-        PhysicalGameState pgs = PhysicalGameState.load("maps/16x16/basesWorkers16x16E.xml", utt);
+        PhysicalGameState pgs = PhysicalGameState.load("maps/NoWhereToRun9x8.xml", utt);
 
         GameState gs = new GameState(pgs, utt);
         int MAXCYCLES = 5000;  // Maximum length of the game
@@ -39,7 +39,7 @@ public class GameVisualSimulationTest {
         //AI ai1 = new BotExercise5(TIME_BUDGET, -1, utt, new BFSPathFinding());  //new WorkerRush(utt, new BFSPathFinding());
 
         AI ai1 = new BillyPuppet(utt);
-        AI ai2 = new LightRush(utt);
+        AI ai2 = new WorkerRush(utt);
 
 
 //        AI ai1 = new exercise8.MonteCarlo(100, -1, 10, 1000,

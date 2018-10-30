@@ -46,7 +46,7 @@ public class RunTournament {
         UnitTypeTable utt = new UnitTypeTable(UnitTypeTable.VERSION_ORIGINAL, UnitTypeTable.MOVE_CONFLICT_RESOLUTION_CANCEL_BOTH);
         AIs.add(new LightRush(utt));
         AIs.add(new WorkerRush(utt));
-        AIs.add(new StrategyTactics(utt));
+        AIs.add(new BillyPuppet(utt));
         //AIs.add(new mc.MonteCarlo(100, -1, 100, 1000,
        //         new RandomAI(), new SimpleSqrtEvaluationFunction3()));
 
