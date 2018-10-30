@@ -31,7 +31,7 @@ public class BillyPuppet extends AIWithComputationBudget implements Interruptibl
 
     public BillyPuppet(UnitTypeTable utt) {
         this(
-                100, -1, true, 80, 20,
+                100, -1, false, 80, 20,
                 new PuppetNoPlan(new PuppetSearchAB(
                         100, -1, 100, -1, 150,
                         new SingleChoiceConfigurableScript(new AStarPathFinding(),
