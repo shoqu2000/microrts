@@ -1,8 +1,15 @@
 package tests;
 
 import ai.RandomBiasedAI;
+import ai.abstraction.HeavyRush;
 import ai.abstraction.LightRush;
+import ai.abstraction.RangedRush;
 import ai.abstraction.WorkerRush;
+import ai.abstraction.pathfinding.AStarPathFinding;
+import ai.evaluation.SimpleEvaluationFunction;
+import ai.puppet.PuppetNoPlan;
+import ai.puppet.PuppetSearchAB;
+import ai.puppet.SingleChoiceConfigurableScript;
 import ai.strategytactics.*;
 import ai.RandomAI;
 import ai.core.AI;
@@ -21,7 +28,7 @@ public class RunTournament {
     public static void main(String args[]) throws Exception {
 
         // Set tournament settings
-        int rounds = 2;                                // Number of rounds in the tournament
+        int rounds = 5;                                // Number of rounds in the tournament
         int timeBudget = 100;                          // Time budget allowed per action (default 100ms)
         //int maxGameLength = 2000;                    // NOT IN USE. Maximum game length (default 2000 ticks) [See List<Integer> lengths]
         boolean fullObservability = true;              // Full or partial observability (default true)
@@ -46,14 +53,46 @@ public class RunTournament {
         UnitTypeTable utt = new UnitTypeTable(UnitTypeTable.VERSION_ORIGINAL, UnitTypeTable.MOVE_CONFLICT_RESOLUTION_CANCEL_BOTH);
         AIs.add(new LightRush(utt));
         AIs.add(new WorkerRush(utt));
-        AIs.add(new BillyPuppet(utt));
+        AIs.add(new RandomBiasedAI());
+        AIs.add(new NaiveMCTS(timeBudget, -1, 100, 10, 0.3f, 0.0f, 0.4f,
+                new RandomBiasedAI(utt),
+                new SimpleEvaluationFunction(), true));
+        AIs.add(new PuppetSearchAB(
+                timeBudget, -1, -1, -1, 100,
+                new SingleChoiceConfigurableScript(new AStarPathFinding(),
+                        new AI[]{
+                                new WorkerRush(utt, new AStarPathFinding()),
+                                new LightRush(utt, new AStarPathFinding()),
+                                new RangedRush(utt, new AStarPathFinding()),
+                                new HeavyRush(utt, new AStarPathFinding())
+                        }),
+                new SimpleEvaluationFunction()));
+
+        //************************************************
+        // CHANGE THE FOLLOWING PARAMETERS FOR TESTING !!!
+        ////**********************************************
+        AIs.add(new BillyPuppet(timeBudget, -1, false, 20, 80,
+                new PuppetNoPlan(new PuppetSearchAB(
+                        timeBudget, -1, -1, -1, 100,
+                        new SingleChoiceConfigurableScript(new AStarPathFinding(),
+                                new AI[]{
+                                        new WorkerRush(utt, new AStarPathFinding()),
+                                        new LightRush(utt, new AStarPathFinding()),
+                                        new RangedRush(utt, new AStarPathFinding()),
+                                        new HeavyRush(utt, new AStarPathFinding())
+                                }),
+                        new SimpleEvaluationFunction())
+                ),
+                new NaiveMCTS(timeBudget, -1, 100, 10, 0.3f, 0.0f, 0.4f,
+                        new RandomBiasedAI(utt),
+                        new SimpleEvaluationFunction(), true)));
         //AIs.add(new mc.MonteCarlo(100, -1, 100, 1000,
        //         new RandomAI(), new SimpleSqrtEvaluationFunction3()));
 
         // Create list of maps for tournament
         List<String> maps = new ArrayList<>();
-        //maps.add("maps/16x16/basesWorkers16x16.xml");
-        //maps.add("maps/24x24/basesWorkers24x24H.xml");
+        maps.add("maps/16x16/basesWorkers16x16.xml");
+        maps.add("maps/24x24/basesWorkers24x24H.xml");
         maps.add("maps/16x16/TwoBasesBarracks16x16.xml");
         maps.add("maps/NoWhereToRun9x8.xml");
 
