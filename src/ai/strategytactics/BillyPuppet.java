@@ -31,9 +31,9 @@ public class BillyPuppet extends AIWithComputationBudget implements Interruptibl
 
     public BillyPuppet(UnitTypeTable utt) {
         this(
-                100, -1, false, 80, 20,
+                100, -1, false, 20, 80,
                 new PuppetNoPlan(new PuppetSearchAB(
-                        100, -1, 100, -1, 150,
+                        100, -1, -1, -1, 100,
                         new SingleChoiceConfigurableScript(new AStarPathFinding(),
                                 new AI[]{
                                         new WorkerRush(utt, new AStarPathFinding()),
@@ -43,8 +43,8 @@ public class BillyPuppet extends AIWithComputationBudget implements Interruptibl
                                 }),
                         new SimpleEvaluationFunction())
                 ),
-                new NaiveMCTS(100, -1, 150, 5, 0.3f, 0.0f, 0.4f,
-                        new WorkerRush(utt),
+                new NaiveMCTS(100, -1, 100, 10, 0.3f, 0.0f, 0.4f,
+                        new RandomBiasedAI(utt),
                         new SimpleEvaluationFunction(), true));
     }
 
@@ -222,35 +222,4 @@ public class BillyPuppet extends AIWithComputationBudget implements Interruptibl
         System.out.println("merged Action:" + mergedAction);
         return mergedAction;
     }
-
-    public AI preGameAnalysis(UnitTypeTable utt){
-        int aiChoice = 0;
-        AI aiWillbeUsed = null;
-
-        if (aiChoice == 0) {
-            aiWillbeUsed = new PuppetNoPlan(new PuppetSearchAB(
-                    100, -1, 100, -1, 100,
-                    new SingleChoiceConfigurableScript(new AStarPathFinding(),
-                            new AI[]{
-                                    new WorkerRush(utt, new AStarPathFinding()),
-                                    new LightRush(utt, new AStarPathFinding()),
-                                    new RangedRush(utt, new AStarPathFinding()),
-                                    new HeavyRush(utt, new AStarPathFinding())
-                            }), new SimpleEvaluationFunction()));
-        }
-        else
-        {
-            aiWillbeUsed = new PuppetNoPlan(
-                    new PuppetSearchMCTS(100, -1,
-                            5000, -1,
-                            100, 100,
-                            new RandomBiasedAI(),
-                            new BasicConfigurableScript(utt, new AStarPathFinding()),
-                            new SimpleEvaluationFunction()));
-        }
-
-
-        return aiWillbeUsed;
-    }
-
 }
