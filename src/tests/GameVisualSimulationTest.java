@@ -1,7 +1,12 @@
 package tests;
 
+import ai.abstraction.HeavyRush;
+import ai.abstraction.LightRush;
+import ai.abstraction.WorkerRush;
+import ai.abstraction.pathfinding.BFSPathFinding;
 import ai.core.AI;
 import ai.*;
+import exercise5.*;
 import ai.strategytactics.*;
 import ai.evaluation.SimpleSqrtEvaluationFunction3;
 import gui.PhysicalGameStatePanel;
@@ -19,22 +24,23 @@ public class GameVisualSimulationTest {
     public static void main(String args[]) throws Exception {
         UnitTypeTable utt = new UnitTypeTable();
 
-        PhysicalGameState pgs = PhysicalGameState.load("maps/16x16/basesWorkers16x16.xml", utt);  // Set map
+//        PhysicalGameState pgs = PhysicalGameState.load("maps/16x16/basesWorkers16x16.xml", utt);  // Set map
 //        PhysicalGameState pgs = MapGenerator.basesWorkers8x8Obstacle();
+
+        PhysicalGameState pgs = PhysicalGameState.load("maps/16x16/basesWorkers16x16E.xml", utt);
 
         GameState gs = new GameState(pgs, utt);
         int MAXCYCLES = 5000;  // Maximum length of the game
         int TIME_BUDGET = 20;  // Time budget for AIs
         boolean gameover = false;
 
-        // Set AIs playing the game
-//        AI ai1 = new BotExercise5(TIME_BUDGET, -1, utt, new BFSPathFinding());  //new WorkerRush(utt, new BFSPathFinding());
+        // Set AIs playing the gam
 
-//        AI ai1 = new RandomBiasedAI();
+        //AI ai1 = new BotExercise5(TIME_BUDGET, -1, utt, new BFSPathFinding());  //new WorkerRush(utt, new BFSPathFinding());
 
-        AI ai1 = new StrategyTactics(utt);
-        AI ai2 = new mc.MonteCarlo(100, -1, 100, 1000,
-                new RandomAI(), new SimpleSqrtEvaluationFunction3());
+        AI ai1 = new BillyPuppet(utt);
+        AI ai2 = new LightRush(utt);
+
 
 //        AI ai1 = new exercise8.MonteCarlo(100, -1, 10, 1000,
 //                new RandomBiasedAI(), new SimpleSqrtEvaluationFunction3(), utt);

@@ -27,6 +27,7 @@ public class Strategy {
     PlayerAction execute(int player, GameState gs, UnitTypeTable utt, PathFinding pf) {
         //We have one global behaviour. Think of this method as a hub to decide between different
         // behaviours at given times under whatever circumstances. For now, we just do a simple behaviour:
+
         return simpleBehaviour(player, gs, utt, pf);
     }
 
@@ -46,23 +47,17 @@ public class Strategy {
 
         // We can only schedule actions if there's something for us to execute. Otherwise, pass.
         if (gs.canExecuteAnyAction(player)) {
-
-
-            //     ------------ TODO 5   ------------
             // Find the currently reserved resources and add them to the new PlayerAction object
             PhysicalGameState pgs = gs.getPhysicalGameState();
 
-            //TODO 5a: Iterate through all the units from 'gs'
-            //for (????) {
-            //TODO 5b: For each unit 'u', get its action assignment
-            //UnitActionAssignment uaa = ????
-
-            //TODO 5c: If the unit action assignment uaa is not null, gets its resource usage and merge it into 'pa'
-            //if (????) {
-            //ResourceUsage ru = uaa.action.resourceUsage(u, pgs); // This picks the usage of resources of unit 'u'
-            //pa.getResourceUsage().merge(ru);                     // This merges the resource usage into 'pa'
-            //}
-            //}
+            for (Unit u : gs.getUnits()) {
+                UnitActionAssignment uaa = gs.getActionAssignment(u);
+                ResourceUsage ru = null;
+                if (uaa != null) {
+                    ru = uaa.action.resourceUsage(u, pgs); // This picks the usage of resources of unit 'u'
+                }
+                pa.getResourceUsage().merge(ru);                     // This merges the resource usage into 'pa'
+            }
 
 
             // We only have 1 worker to start with, find it and set this as active worker.
@@ -80,19 +75,17 @@ public class Strategy {
             if (gs.getActionAssignment(activeWorker) == null) {
 
                 //First we harvest.
-                if(harvesting) {
+                if (harvesting) {
                     boolean finished = handleHarvest(gs, pa);
-                    if(finished)
-                    {
+                    if (finished) {
                         harvesting = false;
                         buildingBarracks = true;
                     }
 
                     //After we have completed harvesting, we build barracks.
-                }else if(buildingBarracks) {
-                    boolean barracksBuilt = handleBuildBarracks(gs, pa, utt);
-                    if(barracksBuilt)
-                    {
+                } else if (buildingBarracks) {
+                    boolean barracksBuilt = handleBuildBarracks(player, gs, pa, utt, pf);
+                    if (barracksBuilt) {
                         buildingBarracks = false;
 
                         //After we have started building the barracks, we use the forward model to see the future.
@@ -102,7 +95,7 @@ public class Strategy {
                     }
 
                     //We send the worker to attack after the barracks are built.
-                }else if(attacking && gs.getUnits().contains(activeWorker)){
+                } else if (attacking && gs.getUnits().contains(activeWorker)) {
                     handleAttack(gs, pa, player, pf);
                 }
             }
@@ -114,7 +107,7 @@ public class Strategy {
                 //TODO 6a: Set actions for this unit only if: its controlling player is 'this', they have no action
                 //   assigned and they are not the activeWorker
 
-                if ( true /*  Contents from TODO 6a */ ) {
+                if (u.getPlayer() == player && u.getUnitActions(gs).isEmpty() && u != activeWorker ) {
 
                     List<UnitAction> availableActions;
 
@@ -128,9 +121,9 @@ public class Strategy {
                         // nextAction = ...
                     }
 
-                    boolean barracksExist = gs.getPhysicalGameState().getUnitAt(4,4) != null;
+                    boolean barracksExist = gs.getPhysicalGameState().getUnitAt(4, 4) != null;
                     //TODO 6d: Set the first available action for this unit only if the barracks exist and the unit is a building:
-                    if ( true /*  Contents from TODO 6d */ ) { // Buildings
+                    if (true /*  Contents from TODO 6d */) { // Buildings
 
                         //TODO 6e: Assign the first one from the available actions list to 'nextAction'
                         // nextAction = ...
@@ -157,10 +150,12 @@ public class Strategy {
 
         //Determine the list of actions to execute the harvest.
         if (harvestActions.size() == 0) {
-            //TODO 1a: Create and add UnitAction instances to the harvestActions list. This list will
             // contain all actions required to harvest (on the worker's left), move closer to the base (2,2),
             // return the resource to the base and be back at the original location (1,1).
             harvestActions.add(new UnitAction(TYPE_HARVEST, DIRECTION_LEFT));
+            harvestActions.add(new UnitAction(TYPE_MOVE, DIRECTION_RIGHT));
+            harvestActions.add(new UnitAction(TYPE_RETURN, DIRECTION_DOWN));
+            //harvestActions.add(new UnitAction(TYPE_MOVE, DIRECTION_LEFT));
             /// create and add more here
         }
 
@@ -172,8 +167,10 @@ public class Strategy {
             checkResourcesAndAddAction(nextAction, activeWorker, pa, gs);
         }
 
-        //TODO 1b: Return true if all actions for harvesting have been assigned. Otherwise, return false;
-        return false;
+        if (harvestActions.size() == 0)
+            return true;
+        else{
+            return false;}
     }
 
 
@@ -185,23 +182,36 @@ public class Strategy {
      * @param pa PlayerAction to assign player actions.
      * @return true if all actions have been issued.
      */
-    private boolean handleBuildBarracks(GameState gs, PlayerAction pa, UnitTypeTable utt) {
-
+    private boolean handleBuildBarracks(int player, GameState gs, PlayerAction pa, UnitTypeTable utt, PathFinding pf) {
+        ResourceUsage ru = null;
+        PhysicalGameState pgs = gs.getPhysicalGameState();
         // Create hardcoded action sequence for the active worker to harvest 1 resource and build Barracks at (4,4).
+
+
         if (buildBarracksActions.size() == 0 && gs.free(4, 4)) {
-            //TODO 2a: Create and add UnitAction instances to the buildBarracksActions list. This should include
             // moving to next to the desired location (4,4) and building a barracks there.
 
-            // create and add actions here.
+            buildBarracksActions.add(pf.findPathToAdjacentPosition(activeWorker, (5+4*pgs.getWidth()), gs, ru));
+            System.out.println("Worker's Position: " + activeWorker.getPosition(pgs) + "  Position of B: " + (4+3*pgs.getWidth()));
+            if (activeWorker.getPosition(pgs) == 4+3*pgs.getWidth()) {
+                buildBarracksActions.add(new UnitAction(TYPE_PRODUCE, DIRECTION_DOWN, utt.getUnitType("Barracks")));
+                // create and add actions here.
+            }
         }
 
         // If there are pending actions, we have to pick one for this game tick.
         if (buildBarracksActions.size() != 0) {
-            // TODO 2b: Pick and remove the next action from the list and assign it to the worker.
+            UnitAction nextAction = buildBarracksActions.remove(0);
+            checkResourcesAndAddAction(nextAction, activeWorker, pa, gs);
         }
 
-        //TODO 2c: Return true if this game cycles issues the last building barracks action. Otherwise, return false;
-        return false;
+        if (buildBarracksActions.size() == 0 && pgs.getUnitAt(4,4) != null)
+            {
+                System.out.println("Barrack is ready!");
+                return true;}
+        else {
+            return false;
+        }
     }
 
     /**
@@ -216,11 +226,17 @@ public class Strategy {
         int numStepsForward = 200;
 
         //TODO 3a: Create a copy of the current game state.
+        GameState _gs = gs.clone();
 
         //TODO 3b: Issue the actions from pa in the copy of gs.
+        _gs.issue(pa);
 
         //TODO 3c: Advance the state numStepsForward ahead
-
+        while (numStepsForward != 0)
+        {
+            _gs.cycle();
+            numStepsForward = numStepsForward -1;
+        }
 
         int barracksCountNow = 0;
         int barracksCountThen = 0;

@@ -47,13 +47,13 @@ public class RunTournament {
         AIs.add(new LightRush(utt));
         AIs.add(new WorkerRush(utt));
         AIs.add(new StrategyTactics(utt));
-        AIs.add(new mc.MonteCarlo(100, -1, 100, 1000,
-                new RandomAI(), new SimpleSqrtEvaluationFunction3()));
+        //AIs.add(new mc.MonteCarlo(100, -1, 100, 1000,
+       //         new RandomAI(), new SimpleSqrtEvaluationFunction3()));
 
         // Create list of maps for tournament
         List<String> maps = new ArrayList<>();
-        maps.add("maps/16x16/basesWorkers16x16.xml");
-        maps.add("maps/24x24/basesWorkers24x24H.xml");
+        //maps.add("maps/16x16/basesWorkers16x16.xml");
+        //maps.add("maps/24x24/basesWorkers24x24H.xml");
         maps.add("maps/16x16/TwoBasesBarracks16x16.xml");
         maps.add("maps/NoWhereToRun9x8.xml");
 
@@ -66,8 +66,8 @@ public class RunTournament {
         // Initialize result writing
         String folderForReadWriteFolders = "readwrite";
 
-//        String traceOutputFolder = "traces";
-        String traceOutputFolder = null;  // Ignore traces
+        String traceOutputFolder = "traces";
+//        String traceOutputFolder = null;  // Ignore traces
 
 //        Writer out = new BufferedWriter(new FileWriter(new File("results.txt")));  // Print to file
         Writer out = new PrintWriter(System.out);  // Print to console
