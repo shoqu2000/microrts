@@ -112,6 +112,7 @@ public class RunTournament {
                                         new WorkerRush(utt, new AStarPathFinding()),
                                         new LightRush(utt, new AStarPathFinding()),
                                         new RangedRush(utt, new AStarPathFinding()),
+                                        new HeavyRush(utt, new AStarPathFinding())
                                 }),
                         new SimpleEvaluationFunction()
                 )),
