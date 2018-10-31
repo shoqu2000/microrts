@@ -6,9 +6,12 @@ import ai.abstraction.LightRush;
 import ai.abstraction.RangedRush;
 import ai.abstraction.WorkerRush;
 import ai.abstraction.pathfinding.AStarPathFinding;
+import ai.evaluation.LanchesterEvaluationFunction;
 import ai.evaluation.SimpleEvaluationFunction;
+import ai.evaluation.SimpleSqrtEvaluationFunction;
 import ai.puppet.PuppetNoPlan;
 import ai.puppet.PuppetSearchAB;
+import ai.puppet.PuppetSearchMCTS;
 import ai.puppet.SingleChoiceConfigurableScript;
 import ai.strategytactics.*;
 import ai.RandomAI;
@@ -71,9 +74,24 @@ public class RunTournament {
         //************************************************
         // CHANGE THE FOLLOWING PARAMETERS FOR TESTING !!!
         ////**********************************************
-        AIs.add(new StrategyTactics(timeBudget, -1, false, 20, 80,
+        /*AIs.add(new StrategyTactics(timeBudget, -1, false, 20, 80,
                 new PuppetNoPlan(new PuppetSearchAB(
-                        timeBudget, -1, -1, -1, 100,
+                        timeBudget, -1, -1, -1, 250,
+                        new SingleChoiceConfigurableScript(new AStarPathFinding(),
+                                new AI[]{
+                                        new WorkerRush(utt, new AStarPathFinding()),
+                                        new LightRush(utt, new AStarPathFinding()),
+                                        new RangedRush(utt, new AStarPathFinding()),
+                                        new HeavyRush(utt, new AStarPathFinding())
+                                }),
+                        new SimpleEvaluationFunction())
+                ),
+                new NaiveMCTS(timeBudget, -1, 100, 10, 0.3f, 0.0f, 0.4f,
+                        new RandomBiasedAI(utt),
+                        new SimpleEvaluationFunction(), true)));*/
+        AIs.add(new StrategyTactics(timeBudget, -1, false, 20, 80,
+                new PuppetNoPlan(new PuppetSearchMCTS(
+                        timeBudget, -1, -1, -1, 100, 100, new RandomBiasedAI(),
                         new SingleChoiceConfigurableScript(new AStarPathFinding(),
                                 new AI[]{
                                         new WorkerRush(utt, new AStarPathFinding()),
