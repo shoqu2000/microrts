@@ -71,7 +71,7 @@ public class RunTournament {
         //************************************************
         // CHANGE THE FOLLOWING PARAMETERS FOR TESTING !!!
         ////**********************************************
-        AIs.add(new BillyPuppet(timeBudget, -1, false, 60, 40,
+        AIs.add(new StrategyTactics(timeBudget, -1, false, 20, 80,
                 new PuppetNoPlan(new PuppetSearchAB(
                         timeBudget, -1, -1, -1, 100,
                         new SingleChoiceConfigurableScript(new AStarPathFinding(),
